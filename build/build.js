@@ -4,7 +4,7 @@ const FS = require('fs-extra');
 const marked = require('marked');
 const loading = require('loading-cli');
 const ghpages = require('gh-pages');
-const minify = require("html-minifier").minify;
+const minify = require("html-minifier-terser").minify;
 const markdownParse = require("@textlint/markdown-to-ast").parse;
 const colors = require('colors-cli/toxic');
 const pkg = require('../package.json');
@@ -76,19 +76,12 @@ function emptyDir(dir) {
  * @param {String} html
  */
 function outputFile(filePath, html) {
-  return new Promise((resolve, reject) => {
-    try {
-      FS.outputFileSync(filePath, minify(html, {
-        minifyCSS: true,
-        minifyJS: true,
-        collapseWhitespace: true,
-        conservativeCollapse: true
-      }));
-      resolve();
-    } catch (err) {
-      reject(err)
-    }
-  });
+  return minify(html, {
+    minifyCSS: true,
+    minifyJS: true,
+    collapseWhitespace: true,
+    conservativeCollapse: true
+  }).then(minified => FS.outputFileSync(filePath, minified));
 }
 
 /**
@@ -108,7 +101,7 @@ function MarkedToHTML(file) {
         return '<h' + level + ' id="' + escapedText + '">' + text + '</h' + level + '>';
       }
       marked.setOptions({ renderer });
-      resolve(marked(markdownStr.toString()));
+      resolve(marked.parse(markdownStr.toString()));
     } catch (err) {
       reject(err)
     }
